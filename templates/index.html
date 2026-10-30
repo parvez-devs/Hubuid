@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#101114">
+  <meta name="color-scheme" content="dark light">
+  <meta name="app-base" content="{{ request.script_root or '' }}">
+  <title>XeroxUID — Slate</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='slate.css', v='8.0.0') }}">
+</head>
+<body>
+  <section id="publicShell" class="public-shell">
+    <div class="login-layout">
+      <section class="login-brand-panel">
+        <div class="login-wordmark"><span class="logo-tile">X</span><span><b>XeroxUID</b><small>Private profile workspace</small></span></div>
+        <div class="login-poster">
+          <p>PRIVATE / LOCAL / FAST</p>
+          <h1>Your profile data,<br><span>without the dashboard noise.</span></h1>
+          <div class="login-rule"></div>
+          <p class="login-note">Import, fetch, save and review profile records from one private workspace.</p>
+        </div>
+      </section>
+      <main class="login-form-panel" id="top">
+        <button class="ghost-link" id="headerLoginBtn" type="button">Sign in</button>
+        <section class="login-card" id="loginSection">
+          <span class="eyebrow">ACCESS</span>
+          <h2>Sign in to continue</h2>
+          <p>Use your existing username and password.</p>
+          <form id="loginForm" autocomplete="on">
+            <label><span>Username</span><input id="loginUsername" name="username" type="text" autocomplete="username" maxlength="32" required></label>
+            <label><span>Password</span><input id="loginPassword" name="password" type="password" autocomplete="current-password" maxlength="128" required></label>
+            <p id="loginError" class="form-message error hidden" role="alert"></p>
+            <button id="loginSubmit" class="primary-button" type="submit">Enter workspace</button>
+          </form>
+          <small class="login-security">Private session · No public registration</small>
+        </section>
+        <button class="hidden" id="heroLoginBtn" type="button" tabindex="-1">Login</button>
+      </main>
+    </div>
+  </section>
+
+  <section id="appShell" class="app-shell hidden">
+    <div class="app-frame">
+      <aside class="desktop-nav">
+        <button class="desktop-logo" data-nav="/" type="button"><span>X</span><b>XeroxUID</b></button>
+        <nav>
+          <button class="nav-button active" data-nav="/" data-route="/" type="button"><b>⌂</b><span>Profiles</span></button>
+          <button class="nav-button" data-nav="/import" data-route="/import" type="button"><b>＋</b><span>Import</span></button>
+          <button class="nav-button" data-nav="/saved" data-route="/saved" type="button"><b>☆</b><span>Saved</span></button>
+          <button class="nav-button" data-nav="/settings" data-route="/settings" type="button"><b>⚙</b><span>Settings</span></button>
+          <button class="nav-button admin-only hidden" data-nav="/admin" data-route="/admin" type="button"><b>◇</b><span>Users</span></button>
+        </nav>
+        <div class="desktop-server"><i id="serverDot"></i><span id="serverStatus">Checking</span></div>
+      </aside>
+
+      <section class="content-shell">
+        <header class="app-header">
+          <button class="mobile-brand" data-nav="/" type="button"><span>X</span><b>XUID</b></button>
+          <div class="header-spacer"></div>
+          <button class="user-pill" id="userMenuBtn" type="button"><span id="currentUserInitial">U</span><span><b id="currentUsername">Operator</b><small id="currentRole">user</small></span></button>
+          <div id="userMenu" class="user-menu hidden"><button data-nav="/settings" type="button">Account settings</button><button id="logoutBtn" class="danger-text" type="button">Sign out</button></div>
+        </header>
+
+        <main class="app-content" id="appContent">
+          <section id="progressSection" class="queue-strip hidden" aria-live="polite">
+            <div><span id="progressText">Working…</span><strong id="progressPercent">0%</strong></div>
+            <div class="queue-track"><span id="progressBar"></span></div>
+            <div class="queue-actions"><button id="stopFetchBtn" class="hidden" type="button">Stop</button><button id="resumeFetchBtn" type="button" disabled>Resume</button></div>
+          </section>
+
+          <section class="screen" data-screen="/" id="homeScreen">
+            <header class="page-head">
+              <div><span class="eyebrow">WORKSPACE</span><h1>Profiles</h1><p id="listSummary">0 records</p></div>
+              <button class="round-add" data-nav="/import" type="button" aria-label="Import">＋</button>
+            </header>
+
+            <section class="summary-line" aria-label="Workspace summary">
+              <div><strong id="totalCount">0</strong><span>Total</span></div>
+              <div><strong id="successCount">0</strong><span>Ready</span></div>
+              <div><strong id="imageCount">0</strong><span>Photos</span></div>
+              <div><strong id="igCount">0</strong><span>IG</span></div>
+              <div><strong id="errorCount">0</strong><span>Issues</span></div>
+            </section>
+
+            <section class="search-zone">
+              <label class="search-line"><span>⌕</span><input id="searchInput" type="search" placeholder="Search profiles" autocomplete="off"><button id="clearSearchBtn" type="button" class="hidden">×</button></label>
+              <div class="filter-row" id="filterRow">
+                <button class="filter-button active" data-filter="all" type="button">All</button>
+                <button class="filter-button" data-filter="pending" type="button">Pending</button>
+                <button class="filter-button" data-filter="success" type="button">Ready</button>
+                <button class="filter-button" data-filter="error" type="button">Issues</button>
+                <button class="filter-button" data-filter="selected" type="button">Selected</button>
+              </div>
+            </section>
+
+            <section class="profile-toolbar">
+              <button id="selectVisibleBtn" type="button">Select</button>
+              <button id="retryFailedBtn" type="button">Retry failed</button>
+              <button id="fetchAllBtn" class="toolbar-primary" type="button">Fetch incomplete</button>
+            </section>
+
+            <div id="selectionBar" class="selection-box hidden">
+              <strong id="selectedCount">0 selected</strong>
+              <div><button id="selectAllFilteredBtn" type="button">All filtered</button><button id="deselectAllBtn" type="button">Deselect</button><button id="copyUidOnlyBtn" type="button">Copy UID</button><button id="copySelectedBtn" type="button">Copy UID|Code</button><button id="deleteSelectedBtn" class="danger-text" type="button">Delete</button></div>
+            </div>
+
+            <section id="cards" class="profile-list" aria-live="polite"></section>
+            <div id="homeSentinel" class="list-sentinel"></div>
+            <section id="emptyState" class="empty-box hidden"><span>○</span><strong>No profiles</strong><p>Import records to get started.</p><button class="primary-button small" data-nav="/import" type="button">Import records</button></section>
+          </section>
+
+          <section class="screen hidden" data-screen="/import" id="importScreen">
+            <header class="page-head"><div><span class="eyebrow">IMPORT</span><h1>Add records</h1><p>Paste UID or UID|CODE, one per line.</p></div></header>
+            <section class="editor-card"><textarea id="importText" rows="15" spellcheck="false" autocomplete="off" placeholder="100012345678901\n100098765432109|finder-code"></textarea><div class="editor-meta"><span id="lineCount">0 lines</span><span>Max 5,000</span></div><button class="primary-button" id="importBtn" type="button">Import records</button><div class="backup-import-row"><input id="backupFileInput" type="file" accept="application/json,.json"><button id="restoreBackupBtn" type="button">Restore backup</button></div><pre id="invalidImportReport" class="diagnostic-result hidden"></pre></section>
+          </section>
+
+          <section class="screen hidden" data-screen="/saved" id="savedScreen">
+            <header class="page-head"><div><span class="eyebrow">SAVED</span><h1>Saved profiles</h1><p>Your starred records.</p></div></header>
+            <label class="search-line saved-search"><span>⌕</span><input id="savedSearchInput" type="search" placeholder="Search saved profiles" autocomplete="off"></label>
+            <section id="savedCards" class="profile-list"></section><div id="savedSentinel" class="list-sentinel"></div>
+            <section id="savedEmptyState" class="empty-box hidden"><span>☆</span><strong>Nothing saved</strong><p>Star profiles to keep them here.</p><button data-nav="/" type="button">Browse profiles</button></section>
+          </section>
+
+          <section class="screen hidden" data-screen="/settings" id="settingsScreen">
+            <header class="page-head"><div><span class="eyebrow">SETTINGS</span><h1>Preferences</h1><p>Control your workspace and account.</p></div></header>
+            <div class="settings-stack">
+              <section class="settings-card"><h2>Appearance</h2><label class="setting-row"><span><strong>Theme</strong><small>Dark or light</small></span><select id="themeSelect"><option value="dark">Dark</option><option value="light">Light</option></select></label><label class="setting-row"><span><strong>Font size</strong><small>Interface scale</small></span><select id="fontSizeSelect"><option value="sm">Small</option><option value="md">Medium</option><option value="lg">Large</option></select></label><label class="setting-row"><span><strong>Card density</strong><small>Comfortable or compact</small></span><select id="viewModeSelect"><option value="full">Comfortable</option><option value="compact">Compact</option></select></label></section>
+              <section class="settings-card"><h2>Behavior</h2><label class="setting-row"><span><strong>Swipe delete</strong><small>Swipe left to remove</small></span><input id="swipeDeleteToggle" type="checkbox"></label><label class="setting-row"><span><strong>Auto retry failed</strong><small>Retry once after login</small></span><input id="autoRetryToggle" type="checkbox"></label><label class="setting-row"><span><strong>Fetch workers</strong><small>Concurrency</small></span><select id="workerConcurrencySelect"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></label></section>
+              <section class="settings-card admin-only hidden" id="fetchDiagnosticPanel"><h2>Fetch diagnostic</h2><button id="fetchDiagnosticBtn" type="button">Run diagnostic</button><pre id="fetchDiagnosticResult" class="diagnostic-result hidden"></pre></section>
+              <section class="settings-card"><h2>Export & recovery</h2><div class="button-grid"><button data-export="txt" type="button">Export TXT</button><button data-export="csv" type="button">Export CSV</button><button data-export="json" type="button">Backup JSON</button><button class="admin-only hidden" id="backupBtn" type="button">Database backup</button><button class="admin-only hidden" id="clearCacheBtn" type="button">Clear image cache</button></div></section>
+              <form id="changePasswordForm" class="settings-card"><h2>Change password</h2><label><span>Current password</span><input id="currentPassword" type="password" autocomplete="current-password" required></label><label><span>New password</span><input id="newPassword" type="password" autocomplete="new-password" minlength="8" required></label><p id="passwordMessage" class="form-message hidden"></p><button class="primary-button" type="submit">Update password</button></form>
+              <section class="settings-card danger-panel"><h2>Danger zone</h2><p>Delete every UID record owned by this account.</p><button class="danger-button" id="deleteAllBtn" type="button">Delete all records</button></section>
+            </div>
+          </section>
+
+          <section class="screen hidden" data-screen="/admin" id="adminScreen">
+            <header class="page-head"><div><span class="eyebrow">ADMIN</span><h1>User access</h1><p>Create and manage operator accounts.</p></div></header>
+            <form id="createUserForm" class="settings-card create-user"><label><span>Username</span><input id="newUserUsername" type="text" minlength="3" maxlength="32" pattern="[A-Za-z0-9_.-]{3,32}" required></label><label><span>Password</span><input id="newUserPassword" type="password" minlength="8" maxlength="128" required></label><label><span>Role</span><select id="newUserRole"><option value="user">Operator</option><option value="admin">Administrator</option></select></label><button class="primary-button" type="submit">Create account</button><p id="createUserMessage" class="form-message hidden"></p></form>
+            <section class="settings-card"><div class="panel-title"><h2>Authorized accounts</h2><button id="refreshUsersBtn" type="button">Refresh</button></div><div id="usersList" class="users-list"></div></section>
+            <section class="settings-card admin-only"><div class="panel-title"><h2>Admin audit</h2><button id="refreshAuditBtn" type="button">Refresh</button></div><div id="auditList" class="audit-list"></div></section>
+          </section>
+
+          <section class="screen hidden" data-screen="404" id="notFoundScreen"><section class="empty-box"><span>404</span><strong>Nothing here</strong><button data-nav="/" type="button">Go home</button></section></section>
+        </main>
+
+        <nav class="mobile-tabs" aria-label="Primary navigation">
+          <button class="nav-button active" data-nav="/" data-route="/" type="button"><b>⌂</b><span>Profiles</span></button>
+          <button class="nav-button" data-nav="/import" data-route="/import" type="button"><b>＋</b><span>Import</span></button>
+          <button class="nav-button" data-nav="/saved" data-route="/saved" type="button"><b>☆</b><span>Saved</span></button>
+          <button class="nav-button" data-nav="/settings" data-route="/settings" type="button"><b>⚙</b><span>Settings</span></button>
+          <button class="nav-button admin-only hidden" data-nav="/admin" data-route="/admin" type="button"><b>◇</b><span>Users</span></button>
+        </nav>
+      </section>
+    </div>
+  </section>
+
+  <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+  <script src="{{ url_for('static', filename='app.js', v='8.0.0') }}" defer></script>
+</body>
+</html>
