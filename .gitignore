@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+data/*.db
+data/*.db-shm
+data/*.db-wal
+.pytest_cache/
+data/.session-secret
+.vercel
